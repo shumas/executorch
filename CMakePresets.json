@@ -91,6 +91,26 @@
       }
     },
     {
+  "name": "catalyst",
+  "displayName": "Build ExecuTorch for Mac Catalyst",
+  "inherits": ["common"],
+  "generator": "Xcode",
+  "cacheVariables": {
+    "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/third-party/ios-cmake/ios.toolchain.cmake",
+
+    "EXECUTORCH_BUILD_PRESET_FILE": "${sourceDir}/tools/cmake/preset/macos.cmake",
+
+    "PLATFORM": "MAC_CATALYST_ARM64",
+    "DEPLOYMENT_TARGET": "17.0",
+    "CMAKE_MACOSX_BUNDLE": "OFF"
+  },
+  "condition": {
+    "lhs": "${hostSystemName}",
+    "type": "equals",
+    "rhs": "Darwin"
+  }
+},
+    {
       "name": "linux",
       "displayName": "Build ExecuTorch for Linux",
       "inherits": ["common"],
