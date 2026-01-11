@@ -8,9 +8,9 @@
 set -euxo pipefail
 
 MODES=()
-PRESETS=("ios" "ios-simulator" "macos")
+PRESETS=("ios" "ios-simulator" "macos" "catalyst")
 # To support backwards compatibility, we want to retain the same output directory.
-PRESETS_RELATIVE_OUT_DIR=("ios" "simulator" "macos")
+PRESETS_RELATIVE_OUT_DIR=("ios" "simulator" "macos" "catalyst")
 
 SOURCE_ROOT_DIR=$(git rev-parse --show-toplevel)
 OUTPUT_DIR="${SOURCE_ROOT_DIR}/cmake-out"
