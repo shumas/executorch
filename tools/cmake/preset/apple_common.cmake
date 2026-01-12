@@ -21,6 +21,23 @@ add_compile_options(
   $<$<COMPILE_LANGUAGE:OBJCXX>:-fdebug-prefix-map=${PROJECT_SOURCE_DIR}=/executorch>
 )
 
+# Patch sentencepiece install rule for Mac Catalyst.
+if(DEFINED PLATFORM AND PLATFORM MATCHES "^MAC_CATALYST")
+  set(_sp_cmake "${PROJECT_SOURCE_DIR}/extension/llm/tokenizers/third-party/sentencepiece/src/CMakeLists.txt")
+  if(EXISTS "${_sp_cmake}")
+    file(READ "${_sp_cmake}" _sp_contents)
+    if(_sp_contents MATCHES "CMAKE_SYSTEM_NAME STREQUAL "iOS"" AND
+       NOT _sp_contents MATCHES "MAC_CATALYST")
+      string(REPLACE "if (CMAKE_SYSTEM_NAME STREQUAL "iOS")"
+                     "if (CMAKE_SYSTEM_NAME STREQUAL "iOS" OR (DEFINED PLATFORM AND PLATFORM MATCHES "^MAC_CATALYST"))"
+                     _sp_contents "${_sp_contents}")
+      file(WRITE "${_sp_cmake}" "${_sp_contents}")
+    endif()
+    unset(_sp_contents)
+  endif()
+  unset(_sp_cmake)
+endif()
+
 set_overridable_option(BUILD_TESTING OFF)
 set_overridable_option(EXECUTORCH_BUILD_XNNPACK ON)
 set_overridable_option(EXECUTORCH_BUILD_COREML ON)
