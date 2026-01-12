@@ -19,8 +19,19 @@ from pathlib import Path
 from typing import Union
 
 import buck_util
-import certifi
-import zstd
+
+try:
+    import certifi  # type: ignore[import-not-found]
+except Exception:
+    certifi = None
+
+try:
+    import zstd  # type: ignore[import-not-found]
+except Exception:
+    try:
+        import zstandard as zstd  # type: ignore[import-not-found]
+    except Exception:
+        zstd = None
 
 """
 Locate or download the version of buck2 needed to build ExecuTorch.
@@ -176,12 +187,22 @@ def resolve_buck2(args: argparse.Namespace) -> Union[str, int]:
         buck2_archive_url = f"https://github.com/facebook/buck2/releases/download/{target_buck_version}/{buck_info.archive_name}"
 
         print(f"Downloading buck2 from {buck2_archive_url}...", file=sys.stderr)
-        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        if certifi is not None:
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+        else:
+            ssl_context = ssl.create_default_context()
 
         with urllib.request.urlopen(buck2_archive_url, context=ssl_context) as request:
             # Extract and chmod.
             data = request.read()
-            decompressed_bytes = zstd.decompress(data)
+            if zstd is None:
+                raise RuntimeError(
+                    "Missing zstd module; install 'zstandard' or 'zstd' to download buck2."
+                )
+            if hasattr(zstd, "decompress"):
+                decompressed_bytes = zstd.decompress(data)
+            else:
+                decompressed_bytes = zstd.ZstdDecompressor().decompress(data)
 
             with open(buck2_local_path, "wb") as f:
                 f.write(decompressed_bytes)

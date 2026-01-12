@@ -18,6 +18,17 @@ endif()
 
 # MARK: - flatbuffers
 
+if(DEFINED EXECUTORCH_FLATC_EXECUTABLE)
+  if(NOT EXISTS "${EXECUTORCH_FLATC_EXECUTABLE}")
+    message(FATAL_ERROR
+      "EXECUTORCH_FLATC_EXECUTABLE points to a missing flatc binary: "
+      "${EXECUTORCH_FLATC_EXECUTABLE}"
+    )
+  endif()
+  add_executable(flatc IMPORTED GLOBAL)
+  set_target_properties(flatc PROPERTIES IMPORTED_LOCATION "${EXECUTORCH_FLATC_EXECUTABLE}")
+else()
+
 if(WIN32)
   set(_executorch_external_project_additional_args)
 else()
@@ -56,6 +67,7 @@ if(WIN32 AND NOT CMAKE_CROSSCOMPILING)
   set_target_properties(flatc PROPERTIES IMPORTED_LOCATION ${INSTALL_DIR}/bin/flatc.exe)
 else()
   set_target_properties(flatc PROPERTIES IMPORTED_LOCATION ${INSTALL_DIR}/bin/flatc)
+endif()
 endif()
 
 # TODO: re-enable once flatbuffers is added as a subdirectory.

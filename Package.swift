@@ -131,6 +131,7 @@ let package = Package(
   platforms: [
     .iOS(.v17),
     .macOS(.v12),
+    .macCatalyst(.v17),
   ],
   products: packageProducts,
   targets: packageTargets + [

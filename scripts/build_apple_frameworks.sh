@@ -8,11 +8,14 @@
 set -euxo pipefail
 
 MODES=()
-PRESETS=("ios" "ios-simulator" "macos")
+PRESETS=("ios" "ios-simulator" "maccatalyst" "macos")
 # To support backwards compatibility, we want to retain the same output directory.
-PRESETS_RELATIVE_OUT_DIR=("ios" "simulator" "macos")
+PRESETS_RELATIVE_OUT_DIR=("ios" "simulator" "maccatalyst" "macos")
 
-SOURCE_ROOT_DIR=$(git rev-parse --show-toplevel)
+SOURCE_ROOT_DIR=$(git rev-parse --show-toplevel 2>/dev/null || true)
+if [[ -z "${SOURCE_ROOT_DIR}" ]]; then
+  SOURCE_ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+fi
 OUTPUT_DIR="${SOURCE_ROOT_DIR}/cmake-out"
 
 BUCK2=$(python3 "$SOURCE_ROOT_DIR/tools/cmake/resolve_buck.py" --cache_dir="$SOURCE_ROOT_DIR/buck2-bin")
@@ -149,6 +152,13 @@ usage() {
 }
 
 CMAKE_OPTIONS_OVERRIDE=()
+EXTRA_CMAKE_ARGS=()
+if [[ -n "${EXECUTORCH_PYTHON_EXECUTABLE:-}" ]]; then
+  EXTRA_CMAKE_ARGS+=("-DPYTHON_EXECUTABLE=${EXECUTORCH_PYTHON_EXECUTABLE}")
+fi
+if [[ -n "${EXECUTORCH_FLATC_EXECUTABLE:-}" ]]; then
+  EXTRA_CMAKE_ARGS+=("-DEXECUTORCH_FLATC_EXECUTABLE=${EXECUTORCH_FLATC_EXECUTABLE}")
+fi
 set_cmake_options_override() {
   local option_name="$1"
 
@@ -216,11 +226,26 @@ for preset_index in "${!PRESETS[@]}"; do
     echo "Building preset ${preset} (${mode}) in ${preset_output_dir}..."
 
     # Do NOT add options here. Update the respective presets instead.
+    cmake_output_args=(
+      -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY="${preset_output_dir}"
+    )
+    if [[ "${preset}" == "maccatalyst" ]]; then
+      # Single-config generator: keep artifacts under <dir>/<mode> for packaging.
+      out_dir="${preset_output_dir}/${mode}"
+      cmake_output_args=(
+        -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY="${out_dir}"
+        -DCMAKE_LIBRARY_OUTPUT_DIRECTORY="${out_dir}"
+        -DCMAKE_RUNTIME_OUTPUT_DIRECTORY="${out_dir}"
+        -DCMAKE_Swift_MODULE_DIRECTORY="${out_dir}"
+      )
+    fi
+
     cmake -S "${SOURCE_ROOT_DIR}" \
           -B "${preset_output_dir}" \
           --fresh \
-          -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY="${preset_output_dir}" \
+          "${cmake_output_args[@]}" \
           -DCMAKE_BUILD_TYPE="${mode}" \
+          ${EXTRA_CMAKE_ARGS[@]:-} \
           ${CMAKE_OPTIONS_OVERRIDE[@]:-} \
           --preset "${preset}"
 
