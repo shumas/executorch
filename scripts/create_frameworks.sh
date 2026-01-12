@@ -128,7 +128,9 @@ create_xcframework() {
         echo -e "\nCopying Swift interface ${swift_module}.swiftinterface into ${xcframework}"
         for dir in "${directories[@]}"; do
             local module_source_dir="${dir}/${swift_module}.swiftmodule"
-            if [ ! -d "$module_source_dir" ]; then
+            if [ -f "$module_source_dir" ]; then
+                module_source_dir="${dir}"
+            elif [ ! -d "$module_source_dir" ]; then
                 echo "Swiftmodule directory ${module_source_dir} does not exist"
                 exit 1
             fi
@@ -147,6 +149,9 @@ create_xcframework() {
             if [[ "$rest" == *-simulator ]]; then
                 platform_tag="${rest%-simulator}"
                 variant="-simulator"
+            elif [[ "$rest" == *-macabi ]] || [[ "$rest" == *-maccatalyst ]]; then
+                platform_tag="ios"
+                variant="-maccatalyst"
             else
                 platform_tag="$rest"
                 variant=""
@@ -154,8 +159,21 @@ create_xcframework() {
             local slice_name="${platform_tag}-${arch}${variant}"
             local slice_path="${xcframework}/${slice_name}"
             if [ ! -d "$slice_path" ]; then
-                echo "Warning: slice '${slice_name}' not found in ${xcframework}, skipping"
-                continue
+                if [[ "$variant" == "-maccatalyst" ]]; then
+                    local fallback
+                    fallback=$(find "$xcframework" -maxdepth 1 -type d \
+                        -name "${platform_tag}-*${variant}" | head -n1)
+                    if [[ -n "$fallback" ]]; then
+                        slice_path="$fallback"
+                        slice_name=$(basename "$slice_path")
+                    else
+                        echo "Warning: slice '${slice_name}' not found in ${xcframework}, skipping"
+                        continue
+                    fi
+                else
+                    echo "Warning: slice '${slice_name}' not found in ${xcframework}, skipping"
+                    continue
+                fi
             fi
             echo " - Copying ${swift_module}.swiftinterface into slice ${slice_name}"
             cp "$swiftinterface_file" "${slice_path}/${swift_module}.swiftinterface"

@@ -9,10 +9,16 @@ set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD
 )
 set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 
-# Clean up the paths LLDB sees in DWARF.
+# Clean up the paths LLDB sees in DWARF (avoid passing to Swift).
 add_compile_options(
-  -ffile-prefix-map=${PROJECT_SOURCE_DIR}=/executorch
-  -fdebug-prefix-map=${PROJECT_SOURCE_DIR}=/executorch
+  $<$<COMPILE_LANGUAGE:C>:-ffile-prefix-map=${PROJECT_SOURCE_DIR}=/executorch>
+  $<$<COMPILE_LANGUAGE:CXX>:-ffile-prefix-map=${PROJECT_SOURCE_DIR}=/executorch>
+  $<$<COMPILE_LANGUAGE:OBJC>:-ffile-prefix-map=${PROJECT_SOURCE_DIR}=/executorch>
+  $<$<COMPILE_LANGUAGE:OBJCXX>:-ffile-prefix-map=${PROJECT_SOURCE_DIR}=/executorch>
+  $<$<COMPILE_LANGUAGE:C>:-fdebug-prefix-map=${PROJECT_SOURCE_DIR}=/executorch>
+  $<$<COMPILE_LANGUAGE:CXX>:-fdebug-prefix-map=${PROJECT_SOURCE_DIR}=/executorch>
+  $<$<COMPILE_LANGUAGE:OBJC>:-fdebug-prefix-map=${PROJECT_SOURCE_DIR}=/executorch>
+  $<$<COMPILE_LANGUAGE:OBJCXX>:-fdebug-prefix-map=${PROJECT_SOURCE_DIR}=/executorch>
 )
 
 set_overridable_option(BUILD_TESTING OFF)

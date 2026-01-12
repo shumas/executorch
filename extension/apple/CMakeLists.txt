@@ -67,6 +67,48 @@ set(SWIFT_CLANG_INTEROP_FLAGS
 )
 set(SWIFT_REMAP_FLAGS "-debug-prefix-map ${PROJECT_SOURCE_DIR}=/executorch")
 
+if(NOT CMAKE_GENERATOR MATCHES "Xcode")
+  target_compile_options(
+    extension_apple
+    PRIVATE
+      $<$<COMPILE_LANGUAGE:Swift>:-Xcc>
+      $<$<COMPILE_LANGUAGE:Swift>:-fmodule-map-file=${MODULE_MAP_FILE}>
+      $<$<COMPILE_LANGUAGE:Swift>:-Xcc>
+      $<$<COMPILE_LANGUAGE:Swift>:-I${MODULE_MAP_DIR}>
+  )
+  if(DEFINED CMAKE_C_COMPILER_TARGET)
+    target_compile_options(
+      extension_apple
+      PRIVATE
+        $<$<COMPILE_LANGUAGE:Swift>:-target>
+        $<$<COMPILE_LANGUAGE:Swift>:${CMAKE_C_COMPILER_TARGET}>
+    )
+  endif()
+  set(_swift_interface_dir "${CMAKE_Swift_MODULE_DIRECTORY}")
+  if(NOT _swift_interface_dir)
+    set(_swift_interface_dir "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+  endif()
+  if(NOT _swift_interface_dir)
+    set(_swift_interface_dir "${CMAKE_CURRENT_BINARY_DIR}")
+  endif()
+  file(MAKE_DIRECTORY "${_swift_interface_dir}")
+  if(DEFINED CMAKE_C_COMPILER_TARGET)
+    set(_swift_interface_file
+        "${_swift_interface_dir}/${CMAKE_C_COMPILER_TARGET}.swiftinterface"
+    )
+  else()
+    set(_swift_interface_file "${_swift_interface_dir}/ExecuTorch.swiftinterface")
+  endif()
+  target_compile_options(
+    extension_apple
+    PRIVATE
+      $<$<COMPILE_LANGUAGE:Swift>:-enable-library-evolution>
+      $<$<COMPILE_LANGUAGE:Swift>:-emit-module-interface>
+      $<$<COMPILE_LANGUAGE:Swift>:-emit-module-interface-path>
+      $<$<COMPILE_LANGUAGE:Swift>:${_swift_interface_file}>
+  )
+endif()
+
 set_target_properties(
   extension_apple
   PROPERTIES Swift_MODULE_NAME "ExecuTorch"

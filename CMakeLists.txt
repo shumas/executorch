@@ -296,7 +296,16 @@ if(EXECUTORCH_BUILD_TESTS)
 endif()
 
 # TODO(dbort): Fix these warnings and remove this flag.
-set(_common_compile_options -Wno-deprecated-declarations -fPIC)
+set(_common_compile_options
+    $<$<COMPILE_LANGUAGE:C>:-Wno-deprecated-declarations>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-declarations>
+    $<$<COMPILE_LANGUAGE:OBJC>:-Wno-deprecated-declarations>
+    $<$<COMPILE_LANGUAGE:OBJCXX>:-Wno-deprecated-declarations>
+    $<$<COMPILE_LANGUAGE:C>:-fPIC>
+    $<$<COMPILE_LANGUAGE:CXX>:-fPIC>
+    $<$<COMPILE_LANGUAGE:OBJC>:-fPIC>
+    $<$<COMPILE_LANGUAGE:OBJCXX>:-fPIC>
+)
 
 # Let files say "include <executorch/path/to/header.h>".
 # TODO(#6475): This requires/assumes that the repo lives in a directory named
